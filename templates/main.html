@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsor de Contas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+</head>
+<body>
+
+    <header class="topo">
+        <div class="topo__conteudo">
+            <h1>Estime Valores de Contas</h1>
+            <h2>Preveja os valores de suas contas</h2>
+        </div>
+    </header>
+
+    <main class="pagina">
+
+        <!-- Formulário: 10 meses + valores -->
+        <section class="cartao">
+            <div class="cartao__cabecalho">
+                <h3>Histórico das contas</h3>
+                <p>Informe o número do mês (01 a 12) do mais antigo para o mais recente,<br> e o valor pago em cada um.</p>
+                <p>Valores muito discrepantes, muito fora do padrão não devem ser colocados.</p>
+                <p>Ex: Mês 1: 103,0 Mês 2: 110,15 <b>Mês 3: 240</b></i>, Mês 4: 103,90 , Mês 5: 108,89</p>
+                <p>O Mês 3 NÃO deve entrar no calculo!</p>
+            </div>
+
+            {% if erro %}
+            <p class="aviso" role="alert">{{ erro }}</p>
+            {% endif %}
+
+            <form method="POST" action="/" class="formulario">
+                {% set meses = request.form.getlist('mes') %}
+                {% set valores = request.form.getlist('valor') %}
+
+                <div class="linhas">
+                    {% for i in range(10) %}
+                    <div class="linha">
+                        <span class="linha__indice">{{ i + 1 }}</span>
+
+                        <label class="campo">
+                            <span>Mês</span>
+                            <input type="number" name="mes" min="1" max="12" step="1"
+                                   placeholder="01" required
+                                   value="{{ meses[i] if meses else '' }}">
+                        </label>
+
+                        <label class="campo campo--valor">
+                            <span>Valor da conta</span>
+                            <div class="campo__moeda">
+                                <i>R$</i>
+                                <input type="number" name="valor" min="0" step="0.01"
+                                       placeholder="0,00" required
+                                       value="{{ valores[i] if valores else '' }}">
+                            </div>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="botao">Calcular previsão</button>
+            </form>
+        </section>
+
+        <!-- Resultado -->
+        <aside class="resultado {% if previsao is defined and previsao is not none %}resultado--pronto{% endif %}">
+            {% if previsao is defined and previsao is not none %}
+                <p class="resultado__titulo">Valor previsto para a próxima conta</p>
+                <p class="resultado__valor">
+                    <small>R$</small>{{ "%.2f"|format(previsao) }}
+                </p>
+                {% if proximo_mes is defined %}
+                <p class="resultado__nota">Previsão para o mês {{ '%02d'|format(proximo_mes) }}, calculada por regressão linear a partir do seu histórico.</p>
+                {% endif %}
+            {% else %}
+                <p class="resultado__titulo">Sua previsão aparece aqui</p>
+                <p class="resultado__vazio">Preencha os 10 meses ao lado e clique em <strong>Calcular previsão</strong>.</p>
+            {% endif %}
+        </aside>
+
+        <!-- Aviso sobre limites da previsão -->
+        <section class="atencao" aria-label="Aviso sobre a previsão">
+            <h3>Antes de confiar no valor</h3>
+            <p>Esta previsão segue apenas a tendência dos meses que você informou. Ela não sabe de:</p>
+            <ul>
+                <li><strong>Mudanças de tarifa:</strong> reajustes, bandeira tarifária, troca de plano ou de fornecedor podem mudar o valor de um mês para o outro.</li>
+                <li><strong>Sazonalidade:</strong> contas como luz, água e gás sobem ou descem conforme a época do ano, e uma linha reta não acompanha isso.</li>
+            </ul>
+            <p>O valor deve seu usado como uma estimativa.</p>
+        </section>
+
+    </main>
+
+    <footer class="rodape">
+        <p>Previsão feita com regressão linear (scikit-learn).</p>
+    </footer>
+
+</body>
+</html>
